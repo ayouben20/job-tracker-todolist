@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Dev Roadmap — Cross-Device Sync</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #08080a;
+      --bg-elevated: #0f0f12;
+      --card: #141417;
+      --card-hover: #1a1a1f;
+      --border: #232328;
+      --border-subtle: #1a1a1e;
+      --border-active: #3a3a42;
+      --fg: #fafafa;
+      --fg-secondary: #e4e4e7;
+      --fg-muted: #71717a;
+      --accent: #22c55e;
+      --accent-secondary: #4ade80;
+      --accent-dim: rgba(34, 197, 94, 0.1);
+      --accent-glow: rgba(34, 197, 94, 0.2);
+      --warning: #eab308;
+      --danger: #ef4444;
+      --info: #6366f1;
+      --legal: #a855f7;
+      --sync: #06b6d4;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      min-height: 100dvh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Background */
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .bg-gradient {
+      background: 
+        radial-gradient(ellipse 120% 80% at 50% -30%, rgba(34, 197, 94, 0.07) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 50% at 100% 50%, rgba(99, 102, 241, 0.04) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 50% at 0% 100%, rgba(6, 182, 212, 0.03) 0%, transparent 50%);
+    }
+
+    .bg-grid {
+      background-image: 
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse at 50% 0%, black 0%, transparent 70%);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
+
+    /* Main Layout */
+    .app-container {
+      position: relative;
+      z-index: 10;
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 1.25rem 1rem 3rem;
+    }
+
+    @media (min-width: 640px) {
+      .app-container { padding: 2rem 1.5rem 4rem; }
+    }
+
+    /* Sync Banner */
+    .sync-banner {
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);
+      border: 1px solid rgba(6, 182, 212, 0.2);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    @media (min-width: 640px) {
+      .sync-banner {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+      }
+    }
+
+    .sync-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sync-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(6, 182, 212, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--sync);
+      flex-shrink: 0;
+    }
+
+    .sync-text h4 {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .sync-text p {
+      font-size: 11px;
+      color: var(--fg-muted);
+    }
+
+    .sync-code {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .sync-code-input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--fg);
+      width: 100%;
+      max-width: 180px;
+    }
+
+    .sync-code-input:focus {
+      outline: none;
+      border-color: var(--sync);
+    }
+
+    .sync-btn {
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .sync-btn-primary {
+      background: var(--sync);
+      color: var(--bg);
+    }
+
+    .sync-btn-primary:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    .sync-btn-secondary {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--fg-secondary);
+    }
+
+    .sync-btn-secondary:hover {
+      border-color: var(--sync);
+      color: var(--sync);
+    }
+
+    /* Header */
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(34, 197, 94, 0.15);
+      border-radius: 100px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .header-title {
+      font-size: clamp(1.75rem, 5vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-top: 0.75rem;
+    }
+
+    .header-subtitle {
+      font-size: 14px;
+      color: var(--fg-muted);
+      margin-top: 0.5rem;
+      max-width: 480px;
+    }
+
+    /* Stats */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 1.5rem;
+    }
+
+    @media (min-width: 640px) {
+      .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 14px 16px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s ease;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+    }
+
+    .stat-card:hover {
+      border-color: var(--border-active);
+    }
+
+    .stat-card.featured {
+      background: linear-gradient(145deg, rgba(34, 197, 94, 0.06) 0%, var(--card) 100%);
+      border-color: rgba(34, 197, 94, 0.15);
+    }
+
+    .stat-label {
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--fg-muted);
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .stat-value.accent { color: var(--accent); }
+
+    /* Progress */
+    .progress-section {
+      margin-top: 14px;
+      background: var(--card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 14px 18px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .progress-track {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+      border-radius: 3px;
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+      animation: progressShimmer 2.5s ease-in-out infinite;
+    }
+
+    @keyframes progressShimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 1.25rem;
+    }
+
+    .control-btn {
+      padding: 10px 16px;
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--fg-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .control-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .control-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* Categories */
+    .categories-container {
+      margin-top: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .category {
+      background: var(--card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .category:hover { border-color: var(--border-active); }
+
+    .category.expanded {
+      border-color: var(--accent);
+      box-shadow: 
+        0 0 0 1px var(--accent),
+        0 12px 40px -12px rgba(34, 197, 94, 0.12);
+    }
+
+    .category-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s ease;
+      gap: 12px;
+    }
+
+    .category-header:hover { background: var(--card-hover); }
+
+    .category.expanded .category-header {
+      background: rgba(34, 197, 94, 0.02);
+    }
+
+    .category-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .category-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .category-info { min-width: 0; }
+
+    .category-info h3 {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin-bottom: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .category-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    .category-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .mini-progress {
+      width: 60px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      display: none;
+    }
+
+    @media (min-width: 480px) { .mini-progress { display: block; } }
+
+    .mini-progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.35s ease;
+    }
+
+    .time-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--fg-muted);
+    }
+
+    .expand-btn {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 7px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--fg-muted);
+      transition: all 0.25s ease;
+    }
+
+    .category.expanded .expand-btn {
+      background: var(--accent-dim);
+      border-color: rgba(34, 197, 94, 0.25);
+      color: var(--accent);
+    }
+
+    .expand-btn svg { transition: transform 0.25s ease; }
+    .category.expanded .expand-btn svg { transform: rotate(180deg); }
+
+    /* Category Content */
+    .category-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .category.expanded .category-content { max-height: 4000px; }
+
+    .category-content-inner {
+      padding: 0 16px 16px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* Tasks */
+    .task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      margin: 6px 0;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .task-item:hover {
+      background: rgba(255,255,255,0.015);
+      border-color: var(--border-subtle);
+    }
+
+    .task-item.completed { opacity: 0.55; }
+    .task-item.completed .task-text {
+      text-decoration: line-through;
+      text-decoration-color: var(--border-active);
+    }
+
+    .checkbox-container {
+      width: 20px;
+      height: 20px;
+      min-width: 20px;
+      border: 2px solid var(--border-active);
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      margin-top: 1px;
+    }
+
+    .task-item:hover .checkbox-container { border-color: var(--accent); }
+
+    .task-item.completed .checkbox-container {
+      background: var(--accent);
+      border-color: var(--accent);
+      transform: scale(1.05);
+    }
+
+    .checkbox-icon {
+      opacity: 0;
+      transform: scale(0) rotate(-45deg);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .task-item.completed .checkbox-icon {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
+
+    .task-content { flex: 1; min-width: 0; }
+
+    .task-text {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--fg-secondary);
+      transition: color 0.2s ease;
+    }
+
+    .task-item.completed .task-text { color: var(--fg-muted); }
+
+    .task-meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+      padding: 2px 6px;
+      background: var(--bg);
+      border-radius: 4px;
+      font-size: 10px;
+      color: var(--fg-muted);
+    }
+
+    /* Priority Colors */
+    .priority-high .category-icon { background: rgba(239, 68, 68, 0.1); color: #f87171; }
+    .priority-high.expanded { border-color: #f87171; box-shadow: 0 0 0 1px #f87171, 0 12px 40px -12px rgba(239, 68, 68, 0.12); }
+    .priority-high .time-badge { border-color: rgba(239, 68, 68, 0.25); color: #f87171; }
+
+    .priority-medium .category-icon { background: rgba(234, 179, 8, 0.1); color: #facc15; }
+    .priority-medium.expanded { border-color: #facc15; box-shadow: 0 0 0 1px #facc15, 0 12px 40px -12px rgba(234, 179, 8, 0.1); }
+    .priority-medium .time-badge { border-color: rgba(234, 179, 8, 0.25); color: #facc15; }
+
+    .priority-low .category-icon { background: rgba(99, 102, 241, 0.1); color: #818cf8; }
+    .priority-low.expanded { border-color: #818cf8; box-shadow: 0 0 0 1px #818cf8, 0 12px 40px -12px rgba(99, 102, 241, 0.1); }
+    .priority-low .time-badge { border-color: rgba(99, 102, 241, 0.25); color: #818cf8; }
+
+    .priority-legal .category-icon { background: rgba(168, 85, 247, 0.1); color: #c084fc; }
+    .priority-legal.expanded { border-color: #c084fc; box-shadow: 0 0 0 1px #c084fc, 0 12px 40px -12px rgba(168, 85, 247, 0.12); }
+    .priority-legal .time-badge { border-color: rgba(168, 85, 247, 0.25); color: #c084fc; }
+
+    /* Footer */
+    .footer-note {
+      margin-top: 2.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-subtle);
+      text-align: center;
+    }
+
+    .footer-text {
+      font-size: 12px;
+      color: var(--fg-muted);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 13px;
+      color: var(--fg);
+      z-index: 1000;
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 12px 40px -12px rgba(0,0,0,0.5);
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success { border-color: var(--accent); color: var(--accent); }
+
+    /* Animations */
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in {
+      animation: fadeSlideIn 0.4s ease forwards;
+      opacity: 0;
+    }
+
+    /* Focus States */
+    .category-header:focus-visible,
+    .task-item:focus-visible,
+    .control-btn:focus-visible,
+    .sync-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    /* Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .progress-fill::after { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-layer bg-gradient"></div>
+  <div class="bg-layer bg-grid"></div>
+
+  <main class="app-container">
+    <!-- Sync Banner -->
+    <section class="sync-banner animate-in" style="animation-delay: 0.02s;">
+      <div class="sync-info">
+        <div class="sync-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          </svg>
+        </div>
+        <div class="sync-text">
+          <h4>Cross-Device Sync</h4>
+          <p>Save your sync code to continue on any device</p>
+        </div>
+      </div>
+      <div class="sync-code">
+        <input type="text" class="sync-code-input mono" id="syncCodeInput" placeholder="Enter sync code..." readonly>
+        <button class="sync-btn sync-btn-primary" id="copySyncCode">Copy Code</button>
+        <button class="sync-btn sync-btn-secondary" id="newSyncCode">New</button>
+      </div>
+    </section>
+
+    <!-- Header -->
+    <header class="animate-in" style="animation-delay: 0.05s;">
+      <div class="header-badge">Development Roadmap</div>
+      <h1 class="header-title">JobTrack Pro Architecture</h1>
+      <p class="header-subtitle">Complete development checklist with cross-device sync. Bookmark this page with your sync code.</p>
+      
+      <div class="controls">
+        <button class="control-btn" id="expandAll">Expand All</button>
+        <button class="control-btn" id="collapseAll">Collapse All</button>
+        <button class="control-btn" id="resetProgress">Reset Progress</button>
+      </div>
+    </header>
+
+    <!-- Stats -->
+    <section class="stats-grid animate-in" style="animation-delay: 0.08s;">
+      <div class="stat-card">
+        <div class="stat-label">Total Tasks</div>
+        <div class="stat-value mono" id="totalTasks">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Completed</div>
+        <div class="stat-value accent mono" id="completedTasks">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Progress</div>
+        <div class="stat-value mono" id="progressPercent">0%</div>
+      </div>
+      <div class="stat-card featured">
+        <div class="stat-label">Remaining</div>
+        <div class="stat-value accent mono" id="totalTime">0w</div>
+      </div>
+    </section>
+
+    <!-- Progress -->
+    <div class="progress-section animate-in" style="animation-delay: 0.1s;">
+      <div class="progress-header">
+        <span style="font-size: 12px; color: var(--fg-muted);">Overall Completion</span>
+        <span class="mono" style="font-size: 12px; color: var(--accent);" id="progressText">0 / 0</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="mainProgress" style="width: 0%;"></div>
+      </div>
+    </div>
+
+    <!-- Categories -->
+    <div class="categories-container" id="categories"></div>
+
+    <!-- Footer -->
+    <footer class="footer-note animate-in" style="animation-delay: 0.2s;">
+      <p class="footer-text">Estimates based on solo development at 40 hrs/week</p>
+    </footer>
+  </main>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ==================== DATA ====================
+    const categories = [
+      {
+        id: 'backend',
+        title: 'Backend & Cloud Sync',
+        priority: 'high',
+        weeks: { min: 2, max: 3 },
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`,
+        tasks: [
+          { id: 'b1', text: 'Replace MMKV/localStorage with Firestore or Supabase', time: '3-4 days' },
+          { id: 'b2', text: 'Implement multi-device sync (jobs, tasks, finance, settings)', time: '2-3 days' },
+          { id: 'b3', text: 'Ensure offline caching works (local + remote)', time: '2 days' },
+          { id: 'b4', text: 'Set up secure read/write permissions per user', time: '1-2 days' },
+          { id: 'b5', text: 'Implement export functionality (CSV, PDF, JSON)', time: '2 days' }
+        ]
+      },
+      {
+        id: 'offline',
+        title: 'Offline-First Functionality',
+        priority: 'high',
+        weeks: { min: 1, max: 2 },
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>`,
+        tasks: [
+          { id: 'of1', text: 'Full offline access to job board, calendar, finance tracker', time: '2-3 days' },
+          { id: 'of2', text: 'Implement queue system for updates to sync automatically when online', time: '2-3 days' },
+          { id: 'of3', text: 'Handle conflict resolution for simultaneous edits', time: '1-2 days' },
+          { id: 'of4', text: 'Add offline indicator UI and sync status', time: '1 day' }
+        ]
+      },
+      {
+        id: 'ai',
+        title: 'AI Features Actualization',
+        priority: 'high',
+        weeks: { min: 1.5, max: 2.5 },
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2M7.5 13a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3m9 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3"/></svg>`,
+        tasks: [
+          { id: 'a1', text: 'Connect ATS scanner, resume builder, outreach generator to real LLM APIs', time: '3-4 days' },
+          { id: 'a2', text: 'Enforce JSON schema for structured AI output', time: '1 day' },
+          { id: 'a3', text: 'Remove fake animations, replace with actual AI output', time: '1-2 days' },
+          { id: 'a4', text: 'Build AI usage / credits tracker', time: '1-2 days' },
+          { id: 'a5', text: 'Implement comprehensive error handling for AI calls', time: '1-2 days' }
+        ]
+      },
+      {
+        id: 'ats-templates',
+        title: 'ATS-Friendly Resume Templates',
+        priority: 'high',
+        weeks: { min: 1, max: 1.5 },
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+        tasks: [
+          { id: 'at1', text: 'Design pre-made ATS-friendly templates with editable customization', time: '2-3 days' },
+          { id: 'at2', text: 'Implement lazy-loading for templates (only load selected one)', time: '1 day' },
+          { id: 'at3', text: 'Build temporary state management for edits before saving', time: '1 day' },
+          { id: 'at4', text: 'Implement PDF export (serverless or local based on performance)', time: '1-2 days' },
+          { id: 'at5', text: 'Add template preview and live editing UI', time: '1-2 days' }
+        ]
+      },
+      {
+        id: 'security',
+        title: 'Security & Privacy Infrastructure',
+        priority: 'high',
+        weeks: { min: 1.5, max: 2 },
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+        tasks: [
+          { id: 's1', text: 'Remove hardcoded keys, generate dynamic keys per user/device', time: '1 day' },
+          { id: 's2', text: 'Implement secure storage (Keychain/Keystore) for keys', time: '1 day' },
+          { id: 's3', text: 'Encrypt all sensitive data at rest (jobs, finances, profile)', time: '2-3 days' },
+          { id: 's4', text: 'Fix web storage — eliminate plain-text localStorage usage', time: '1 day' },
+          { id: 's5', text: 'HTTPS/TLS enforcement for all API communications', time: '0.5 day' }
+        ]
+      },
+      {
+        id: 'privacy',
+        title: 'Privacy & Compliance',
+        priority: 'legal',
+        weeks: { min: 1.5, max: 2 },
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>`,
+        tasks: [
+          { id: 'p1', text: 'Draft GDPR-compliant Privacy Policy (data types, purposes, retention)', time: '1-2 days' },
+          { id: 'p2', text: 'Implement consent modal for data collection & AI processing with timestamps', time: '1-2 days' },
+          { id: 'p3', text: 'Build user rights endpoints: data access, deletion, and export', time: '2-3 days' },
+          { id: 'p4', text: 'Implement audit logging for all sensitive operations', time: '2 days' },
+          { id: 'p5', text: 'Document breach response plan (72-hour notification protocol)', time: '0.5 day' },
+          { id: 'p6', text: 'Add age restriction disclaimers and UI consent flows', time: '0.5 day' },
+          { id: 'p7', text: 'Audit third-party services (AI APIs, analytics) for GDPR compliance', time: '1 day' }
+        ]
+      },
+      {
+        id: 'settings',
+        title: 'Settings Page Implementation',
+        priority: 'medium',
+        weeks: { min: 0.5, max: 1 },
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
+        tasks: [
+          { id: 'st1', text: 'Design and implement settings page layout', time: '1-2 days' },
+          { id: 'st2', text: 'Add notification preferences section', time: '0.5 day' },
+          { id: 'st3', text: 'Implement data management options (export, delete)', time: '1 day' },
+          { id: 'st4', text: 'Add AI credits and usage display', time: '0.5 day' }
+        ]
+      },
+      {
+        id: 'theme',
+        title: 'Light / Dark Mode Fixes',
+        priority: 'medium',
+        weeks: { min: 0.5, max: 0.75 },
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
+        tasks: [
+          { id: 'th1', text: 'Audit all components for theme consistency', time: '1 day' },
+          { id: 'th2', text: 'Fix contrast issues in light mode', time: '1 day' },
+          { id: 'th3', text: 'Implement smooth theme transitions', time: '0.5 day' },
+          { id: 'th4', text: 'Test all screens in both themes', time: '0.5 day' }
+        ]
+      },
+      {
+        id: 'i18n',
+        title: 'Multi-Language Support',
+        priority: 'medium',
+        weeks: { min: 1, max: 1.5 },
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,
+        tasks: [
+          { id: 'i1', text: 'Set up i18n framework and structure', time: '1 day' },
+          { id: 'i2', text: 'Extract all hardcoded strings to translation files', time: '2-3 days' },
+          { id: 'i3', text: 'Implement language selector in settings', time: '0.5 day' },
+          { id: 'i4', text: 'Add RTL support for applicable languages', time: '1 day' },
+          { id: 'i5', text: 'Add English and French translations', time: '1 day' }
+        ]
+      },
+      {
+        id: 'profile',
+        title: 'Profile Section',
+        priority: 'medium',
+        weeks: { min: 0.75, max: 1 },
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+        tasks: [
+          { id: 'pr1', text: 'Design profile page layout', time: '1 day' },
+          { id: 'pr2', text: 'Implement user info form (name, email, career info)', time: '1-2 days' },
+          { id: 'pr3', text: 'Add profile picture upload functionality', time: '1 day' },
+          { id: 'pr4', text: 'Connect profile data to resume generation', time: '0.5 day' }
+        ]
+      },
+      {
+        id: 'ux-polish',
+        title: 'UX Polishing & Micro-Interactions',
+        priority: 'medium',
+        weeks: { min: 1, max: 1.5 },
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`,
+        tasks: [
+          { id: 'ux1', text: 'Add subtle haptic feedback for interactions', time: '1 day' },
+          { id: 'ux2', text: 'Implement feedback animations throughout app', time: '1-2 days' },
+          { id: 'ux3', text: 'Smart theming: adjust Aero Glass intensity based on device performance', time: '1-2 days' },
+          { id: 'ux4', text: 'Add contextual help tooltips', time: '1 day' },
+          { id: 'ux5', text: 'Build onboarding flow for new users', time: '1-2 days' }
+        ]
+      },
+      {
+        id: 'refactor',
+        title: 'Code Refactoring & Maintainability',
+        priority: 'medium',
+        weeks: { min: 2, max: 3 },
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
+        tasks: [
+          { id: 'r1', text: 'Decompose large screen files into atomic components', time: '4-5 days' },
+          { id: 'r2', text: 'Extract logic into custom hooks (useJobs, useFinance, useAI)', time: '2-3 days' },
+          { id: 'r3', text: 'Replace inline ternary styling with responsive design wrappers', time: '1-2 days' },
+          { id: 'r4', text: 'Refactor Zustand stores into focused, single-responsibility stores', time: '1-2 days' },
+          { id: 'r5', text: 'Establish consistent folder architecture', time: '1 day' }
+        ]
+      },
+      {
+        id: 'performance',
+        title: 'Performance & Optimization',
+        priority: 'medium',
+        weeks: { min: 1, max: 1.5 },
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,
+        tasks: [
+          { id: 'pf1', text: 'Replace ScrollViews with FlatLists / SectionLists', time: '2 days' },
+          { id: 'pf2', text: 'Optimize blur effects and reduce nested complexity', time: '1 day' },
+          { id: 'pf3', text: 'Audit reanimated usage for hardware acceleration', time: '1-2 days' },
+          { id: 'pf4', text: 'Performance testing on mid and low-tier devices', time: '1 day' },
+          { id: 'pf5', text: 'Implement lazy loading for heavy components', time: '1 day' }
+        ]
+      },
+      {
+        id: 'testing',
+        title: 'Testing & Reliability',
+        priority: 'medium',
+        weeks: { min: 1.5, max: 2 },
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`,
+        tasks: [
+          { id: 't1', text: 'Unit tests: stores, AI services, financial calculations', time: '2-3 days' },
+          { id: 't2', text: 'Component tests: Calendar, Kanban, JobDetailsModal', time: '2 days' },
+          { id: 't3', text: 'E2E testing setup (Expo Detox or Playwright)', time: '2-3 days' },
+          { id: 't4', text: 'CI/CD pipeline for automated testing', time: '1-2 days' }
+        ]
+      },
+      {
+        id: 'accessibility',
+        title: 'Accessibility & UX Polish',
+        priority: 'low',
+        weeks: { min: 0.5, max: 1 },
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/></svg>`,
+        tasks: [
+          { id: 'ax1', text: 'Implement ARIA roles for web components', time: '1 day' },
+          { id: 'ax2', text: 'Screen reader testing and support', time: '1 day' },
+          { id: 'ax3', text: 'Scale tap targets for mobile accessibility', time: '0.5 day' },
+          { id: 'ax4', text: 'Respect system Reduce Motion preferences', time: '0.5 day' },
+          { id: 'ax5', text: 'Color contrast audit (WCAG 4.5:1 minimum)', time: '0.5 day' }
+        ]
+      },
+      {
+        id: 'deployment',
+        title: 'Deployment & CI/CD Pipeline',
+        priority: 'medium',
+        weeks: { min: 0.5, max: 1 },
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`,
+        tasks: [
+          { id: 'd1', text: 'Configure production environments (Firebase/Vercel)', time: '1 day' },
+          { id: 'd2', text: 'Set up automated builds (iOS/Android/Web)', time: '1-2 days' },
+          { id: 'd3', text: 'Implement crash reporting (Sentry/Crashlytics)', time: '0.5 day' },
+          { id: 'd4', text: 'Configure real-time performance monitoring', time: '0.5 day' }
+        ]
+      },
+      {
+        id: 'security-adv',
+        title: 'Advanced Security Hardening',
+        priority: 'high',
+        weeks: { min: 1, max: 2 },
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+        tasks: [
+          { id: 'sa1', text: 'MFA implementation and token/session management', time: '2-3 days' },
+          { id: 'sa2', text: 'AI input validation and prompt injection prevention', time: '1-2 days' },
+          { id: 'sa3', text: 'XSS and CSRF protection layers', time: '1-2 days' },
+          { id: 'sa4', text: 'Mobile obfuscation and secure network requests', time: '1-2 days' },
+          { id: 'sa5', text: 'Role-Based Access Control (RBAC) implementation', time: '1-2 days' },
+          { id: 'sa6', text: 'Security audit logging and alerting system', time: '1-2 days' },
+          { id: 'sa7', text: 'Penetration testing and vulnerability scanning', time: '2-3 days' }
+        ]
+      },
+      {
+        id: 'optional',
+        title: 'Optional Advanced Enhancements',
+        priority: 'low',
+        weeks: { min: 2, max: 4 },
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+        tasks: [
+          { id: 'o1', text: 'Real-time multi-user collaboration features', time: '1-2 weeks' },
+          { id: 'o2', text: 'Robust offline mode with sync queues', time: '3-5 days' },
+          { id: 'o3', text: 'Gamification and streak tracking system', time: '2-3 days' },
+          { id: 'o4', text: 'Multi-language localization (i18n)', time: '3-5 days' },
+          { id: 'o5', text: 'Professional PDF export with portfolio integration', time: '2-3 days' }
+        ]
+      }
+    ];
+
+    // ==================== STATE ====================
+    let state = {
+      completed: new Set(),
+      expanded: new Set(),
+      syncId: null
+    };
+
+    // ==================== UTILITIES ====================
+    
+    // Simple hash function for sync ID
+    function generateSyncId() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let result = '';
+      for (let i = 0; i < 8; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    }
+
+    // Compress data for URL
+    function compressData(data) {
+      try {
+        const str = JSON.stringify(data);
+        // Simple base64 encoding with URL-safe characters
+        return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      } catch (e) {
+        console.error('Compression failed:', e);
+        return '';
+      }
+    }
+
+    // Decompress data from URL
+    function decompressData(compressed) {
+      try {
+        // Restore base64 characters
+        const restored = compressed.replace(/-/g, '+').replace(/_/g, '/');
+        const str = atob(restored);
+        return JSON.parse(str);
+      } catch (e) {
+        console.error('Decompression failed:', e);
+        return null;
+      }
+    }
+
+    // Save to localStorage with sync ID
+    function saveLocal() {
+      if (!state.syncId) return;
+      try {
+        const data = {
+          completed: Array.from(state.completed),
+          expanded: Array.from(state.expanded),
+          lastModified: Date.now()
+        };
+        localStorage.setItem(`roadmap_${state.syncId}`, JSON.stringify(data));
+      } catch (e) {
+        console.warn('LocalStorage save failed:', e);
+      }
+    }
+
+    // Load from localStorage
+    function loadLocal() {
+      if (!state.syncId) return false;
+      try {
+        const saved = localStorage.getItem(`roadmap_${state.syncId}`);
+        if (saved) {
+          const data = JSON.parse(saved);
+          state.completed = new Set(data.completed || []);
+          state.expanded = new Set(data.expanded || []);
+          return true;
+        }
+      } catch (e) {
+        console.warn('LocalStorage load failed:', e);
+      }
+      return false;
+    }
+
+    // Update URL with sync ID
+    function updateUrl() {
+      if (!state.syncId) return;
+      const url = new URL(window.location.href);
+      url.searchParams.set('sync', state.syncId);
+      window.history.replaceState({}, '', url.toString());
+    }
+
+    // Toast notification
+    function showToast(message, type = 'default') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast show' + (type === 'success' ? ' success' : '');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    // ==================== RENDERING ====================
+    function render() {
+      const container = document.getElementById('categories');
+      if (!container) return;
+      
+      container.innerHTML = categories.map((cat, i) => renderCategory(cat, i)).join('');
+      attachListeners();
+      updateStats();
+    }
+
+    function renderCategory(cat, index) {
+      const completedCount = cat.tasks.filter(t => state.completed.has(t.id)).length;
+      const total = cat.tasks.length;
+      const progress = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+      const isExpanded = state.expanded.has(cat.id);
+
+      return `
+        <article class="category animate-in priority-${cat.priority} ${isExpanded ? 'expanded' : ''}" 
+                 id="cat-${cat.id}" style="animation-delay: ${0.08 + index * 0.03}s;">
+          <div class="category-header" role="button" tabindex="0" aria-expanded="${isExpanded}" data-cat="${cat.id}">
+            <div class="category-left">
+              <div class="category-icon">${cat.icon}</div>
+              <div class="category-info">
+                <h3>${cat.title}</h3>
+                <div class="category-meta">
+                  <span class="mono" style="color: var(--fg-muted);">${completedCount}/${total}</span>
+                </div>
+              </div>
+            </div>
+            <div class="category-right">
+              <div class="mini-progress">
+                <div class="mini-progress-fill" style="width: ${progress}%;"></div>
+              </div>
+              <div class="time-badge mono">${cat.weeks.min}-${cat.weeks.max}w</div>
+              <div class="expand-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div class="category-content">
+            <div class="category-content-inner">
+              ${cat.tasks.map(task => renderTask(task)).join('')}
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderTask(task) {
+      const isDone = state.completed.has(task.id);
+      return `
+        <div class="task-item ${isDone ? 'completed' : ''}" data-task="${task.id}" 
+             role="checkbox" aria-checked="${isDone}" tabindex="0">
+          <div class="checkbox-container">
+            <svg class="checkbox-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div class="task-content">
+            <p class="task-text">${task.text}</p>
+            <div class="task-meta mono">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+              </svg>
+              ${task.time}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==================== INTERACTIONS ====================
+    function attachListeners() {
+      // Category headers
+      document.querySelectorAll('.category-header').forEach(el => {
+        el.addEventListener('click', handleToggleCategory);
+        el.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleToggleCategory(e);
+          }
+        });
+      });
+
+      // Task items
+      document.querySelectorAll('.task-item').forEach(el => {
+        el.addEventListener('click', handleToggleTask);
+        el.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleToggleTask(e);
+          }
+        });
+      });
+
+      // Control buttons
+      document.getElementById('expandAll')?.addEventListener('click', () => {
+        categories.forEach(c => state.expanded.add(c.id));
+        document.querySelectorAll('.category').forEach(el => el.classList.add('expanded'));
+        saveLocal();
+        showToast('All sections expanded');
+      });
+
+      document.getElementById('collapseAll')?.addEventListener('click', () => {
+        state.expanded.clear();
+        document.querySelectorAll('.category').forEach(el => el.classList.remove('expanded'));
+        saveLocal();
+        showToast('All sections collapsed');
+      });
+
+      document.getElementById('resetProgress')?.addEventListener('click', () => {
+        if (confirm('Reset all progress? This cannot be undone.')) {
+          state.completed.clear();
+          render();
+          saveLocal();
+          showToast('Progress reset');
+        }
+      });
+    }
+
+    function handleToggleCategory(e) {
+      const catId = e.currentTarget.dataset.cat;
+      const article = document.getElementById(`cat-${catId}`);
+      if (!article) return;
+      
+      if (state.expanded.has(catId)) {
+        state.expanded.delete(catId);
+        article.classList.remove('expanded');
+      } else {
+        state.expanded.add(catId);
+        article.classList.add('expanded');
+      }
+      e.currentTarget.setAttribute('aria-expanded', state.expanded.has(catId));
+      saveLocal();
+    }
+
+    function handleToggleTask(e) {
+      const taskId = e.currentTarget.dataset.task;
+      const taskEl = e.currentTarget;
+
+      if (state.completed.has(taskId)) {
+        state.completed.delete(taskId);
+        taskEl.classList.remove('completed');
+        taskEl.setAttribute('aria-checked', 'false');
+      } else {
+        state.completed.add(taskId);
+        taskEl.classList.add('completed');
+        taskEl.setAttribute('aria-checked', 'true');
+      }
+
+      // Update category stats
+      const catEl = taskEl.closest('.category');
+      if (catEl) {
+        const catId = catEl.id.replace('cat-', '');
+        const cat = categories.find(c => c.id === catId);
+        if (cat) {
+          const done = cat.tasks.filter(t => state.completed.has(t.id)).length;
+          const pct = Math.round((done / cat.tasks.length) * 100);
+          const meta = catEl.querySelector('.category-meta span');
+          const miniFill = catEl.querySelector('.mini-progress-fill');
+          if (meta) meta.textContent = `${done}/${cat.tasks.length}`;
+          if (miniFill) miniFill.style.width = `${pct}%`;
+        }
+      }
+
+      updateStats();
+      saveLocal();
+    }
+
+    function updateStats() {
+      let total = 0;
+      let done = 0;
+      let remainingMin = 0;
+      let remainingMax = 0;
+
+      categories.forEach(cat => {
+        const catTasks = cat.tasks.length;
+        const catDone = cat.tasks.filter(t => state.completed.has(t.id)).length;
+        total += catTasks;
+        done += catDone;
+
+        const remaining = 1 - (catDone / catTasks);
+        remainingMin += cat.weeks.min * remaining;
+        remainingMax += cat.weeks.max * remaining;
+      });
+
+      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+      const totalEl = document.getElementById('totalTasks');
+      const doneEl = document.getElementById('completedTasks');
+      const pctEl = document.getElementById('progressPercent');
+      const textEl = document.getElementById('progressText');
+      const progressEl = document.getElementById('mainProgress');
+      const timeEl = document.getElementById('totalTime');
+
+      if (totalEl) totalEl.textContent = total;
+      if (doneEl) doneEl.textContent = done;
+      if (pctEl) pctEl.textContent = `${pct}%`;
+      if (textEl) textEl.textContent = `${done} / ${total}`;
+      if (progressEl) progressEl.style.width = `${pct}%`;
+      if (timeEl) {
+        const min = remainingMin.toFixed(1);
+        const max = remainingMax.toFixed(1);
+        timeEl.textContent = min === max ? `${min}w` : `${min}-${max}w`;
+      }
+    }
+
+    // ==================== SYNC SYSTEM ====================
+    function initSync() {
+      const syncInput = document.getElementById('syncCodeInput');
+      const copyBtn = document.getElementById('copySyncCode');
+      const newBtn = document.getElementById('newSyncCode');
+
+      // Check URL for existing sync ID
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlSyncId = urlParams.get('sync');
+
+      if (urlSyncId && urlSyncId.length === 8) {
+        state.syncId = urlSyncId.toUpperCase();
+        loadLocal();
+        if (syncInput) syncInput.value = state.syncId;
+      } else {
+        // Generate new sync ID
+        state.syncId = generateSyncId();
+        if (syncInput) syncInput.value = state.syncId;
+        updateUrl();
+      }
+
+      // Copy button
+      copyBtn?.addEventListener('click', async () => {
+        const code = state.syncId;
+        const url = `${window.location.origin}${window.location.pathname}?sync=${code}`;
+        
+        try {
+          await navigator.clipboard.writeText(url);
+          showToast('Sync link copied to clipboard!', 'success');
+        } catch (e) {
+          // Fallback
+          if (syncInput) {
+            syncInput.select();
+            document.execCommand('copy');
+            showToast('Sync code copied!', 'success');
+          }
+        }
+      });
+
+      // New sync ID button
+      newBtn?.addEventListener('click', () => {
+        if (confirm('Create a new sync ID? Your current progress will not transfer.')) {
+          state.syncId = generateSyncId();
+          state.completed.clear();
+          state.expanded.clear();
+          if (syncInput) syncInput.value = state.syncId;
+          updateUrl();
+          render();
+          showToast('New sync ID created');
+        }
+      });
+    }
+
+    // ==================== INITIALIZATION ====================
+    function init() {
+      initSync();
+      render();
+    }
+
+    // Start the app
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>
